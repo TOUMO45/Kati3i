@@ -111,36 +111,69 @@ export function unsoldInvestmentValue(flock, expenses) {
   return currentCostPerSheep(flock, expenses) * liveSheepCount(flock, expenses)
 }
 
-// ─────────────────────── Value & profit (existing API, kept stable) ───────────────────────
+// ─────────────────────── Value & profit ───────────────────────
+//
+// How profit is defined everywhere in the app:
+//
+//   • Unsold animals are carried AT COST, so on their own they are neither a
+//     profit nor a loss.
+//   • Profit is therefore what the flock's recorded sales earned: the sum of
+//     each sale's (revenue − cost of the animals sold).
+//   • A "legacy" sold flock (status 'sold' + soldPrice, closed before the
+//     sales collection existed, so it has NO sale records) falls back to
+//     soldPrice − totalInvested.
+//
+// A flock is counted through its sale records OR through the legacy
+// soldPrice path — never both. (Counting both doubled the revenue and the
+// profit of every flock closed with a recorded sale.)
 
-// For active flocks: estimated value using avg cost per sheep × live count.
-// For sold flocks: use the actual sale price.
-export function currentValue(flock, expenses) {
-  if (flock.status === 'sold') return Number(flock.soldPrice || 0)
+export function salesForFlock(sales, flockId) {
+  return (sales || []).filter((s) => s.flockId === flockId)
+}
+
+function isLegacySold(flock, flockSales) {
+  return flock.status === 'sold' && flockSales.length === 0
+}
+
+// Money received for this flock so far.
+export function flockRevenue(flock, sales) {
+  const own = salesForFlock(sales, flock.id)
+  if (own.length) return totalRevenue(own)
+  return isLegacySold(flock, own) ? Number(flock.soldPrice || 0) : 0
+}
+
+// Part of the investment already recovered through sales.
+export function flockRecovered(flock, expenses, sales) {
+  const own = salesForFlock(sales, flock.id)
+  if (own.length) return totalInvestmentRecovered(own)
+  return isLegacySold(flock, own) ? totalInvested(flock, expenses) : 0
+}
+
+// Investment still tied up in the flock (not yet recovered by a sale).
+export function remainingInvestment(flock, expenses, sales) {
+  return Math.max(0, totalInvested(flock, expenses) - flockRecovered(flock, expenses, sales))
+}
+
+// Profit the flock has made so far (negative = loss).
+export function flockProfit(flock, expenses, sales) {
+  const own = salesForFlock(sales, flock.id)
+  if (own.length) return totalRealizedProfit(own)
+  return isLegacySold(flock, own)
+    ? Number(flock.soldPrice || 0) - totalInvested(flock, expenses)
+    : 0
+}
+
+// For active flocks: unsold animals at cost (avg cost per animal × live count).
+// For sold flocks: everything the flock was sold for.
+export function currentValue(flock, expenses, sales = []) {
+  if (flock.status === 'sold') return flockRevenue(flock, sales)
   return currentCostPerSheep(flock, expenses) * liveSheepCount(flock, expenses)
 }
 
-export function unrealizedProfit(flock, expenses) {
-  if (flock.status === 'sold') return 0
-  return currentValue(flock, expenses) - totalInvested(flock, expenses)
-}
-
-// Realized profit only counts what was actually sold via the legacy
-// "sold" status (where soldPrice is recorded on the flock). Per-transaction
-// profit for partial/full sales lives in the `sales` collection and is
-// aggregated by totalRealizedProfit below.
-export function realizedProfit(flock, expenses) {
-  if (flock.status !== 'sold') return 0
-  return Number(flock.soldPrice || 0) - totalInvested(flock, expenses)
-}
-
-export function roi(flock, expenses) {
+export function roi(flock, expenses, sales = []) {
   const invested = totalInvested(flock, expenses)
   if (!invested) return 0
-  const profit = flock.status === 'sold'
-    ? realizedProfit(flock, expenses)
-    : unrealizedProfit(flock, expenses)
-  return (profit / invested) * 100
+  return (flockProfit(flock, expenses, sales) / invested) * 100
 }
 
 // ─────────────────────── Sales aggregation (new) ───────────────────────
@@ -238,70 +271,65 @@ export function holdingDays(flock) {
 
 // ─────────────────────── Portfolio rollup (dashboard) ───────────────────────
 
-// Aggregates totals across all NON-ARCHIVED flocks.
-// `sales` is the full list of sales across all flocks. The dashboard-level
-// realized profit comes from sales, not from the legacy flock.soldPrice path,
-// so partial sales are reflected correctly.
+// Aggregates totals across all NON-ARCHIVED flocks. `sales` may be the full
+// list of sales; only those belonging to the given flocks are counted.
+//
+//   profit     = sum of every flock's profit (see flockProfit)
+//   totalValue = totalInvested + profit
+//              = money received from sales + investment still tied up in
+//                unsold animals
+//   roi        = profit / totalInvested
 export function portfolioTotals(flocks, expenses, sales = []) {
   const active = visibleFlocks(flocks)
+  const ids = new Set(active.map((f) => f.id))
+  const own = (sales || []).filter((s) => ids.has(s.flockId))
 
   let totalInvestedAll = 0
-  let totalValueAll = 0
   let unsoldInvestmentAll = 0
-  let legacyRealizedAll = 0
+  let revenueAll = 0
+  let recoveredAll = 0
+  let profitAll = 0
   let activeCount = 0
   let soldCount = 0
   let sheepTotal = 0
-  let totalLiveAll = 0
+  let activeInvested = 0
+  let activeBasis = 0
 
   for (const f of active) {
     totalInvestedAll += totalInvested(f, expenses)
-    const live = liveSheepCount(f, expenses)
-    totalLiveAll += live
+    revenueAll       += flockRevenue(f, own)
+    recoveredAll     += flockRecovered(f, expenses, own)
+    profitAll        += flockProfit(f, expenses, own)
     if (f.status === 'sold') {
-      totalValueAll += Number(f.soldPrice || 0)
-      legacyRealizedAll += realizedProfit(f, expenses)
       soldCount++
     } else {
-      totalValueAll += currentValue(f, expenses)
-      unsoldInvestmentAll += unsoldInvestmentValue(f, expenses)
       activeCount++
-      sheepTotal += live
+      sheepTotal          += liveSheepCount(f, expenses)
+      unsoldInvestmentAll += unsoldInvestmentValue(f, expenses)
+      activeInvested      += totalInvested(f, expenses)
+      activeBasis         += costBasisCount(f, expenses)
     }
   }
 
-  // Sales-based aggregates (these include both 'full' and 'partial' sales).
-  const salesRevenueAll   = totalRevenue(sales)
-  const salesProfitAll    = totalRealizedProfit(sales)
-  const salesInvestedAll  = totalInvestmentRecovered(sales)
-
-  // Realized profit = sales profit + legacy full-flock-sale profit.
-  const realizedAll = salesProfitAll + legacyRealizedAll
-
-  // Net profit (realized + unrealized change in unsold value vs unsold investment).
-  const profitAll = realizedAll + (totalValueAll - totalInvestedAll)
   const roiAll = totalInvestedAll ? (profitAll / totalInvestedAll) * 100 : 0
 
-  // Weighted average cost per sheep across all active flocks.
-  const avgCostPerSheep = totalLiveAll > 0
-    ? (active.reduce((s, f) => s + totalInvested(f, expenses), 0)) / totalLiveAll
-    : 0
+  // Weighted average cost per animal across flocks that are still active.
+  const avgCostPerSheep = activeBasis > 0 ? activeInvested / activeBasis : 0
 
   return {
     totalInvested: totalInvestedAll,
-    totalValue: totalValueAll,
+    totalValue: totalInvestedAll + profitAll,
     profit: profitAll,
-    realized: realizedAll,
+    realized: profitAll,
     roi: roiAll,
     activeCount,
     soldCount,
     sheepTotal,
-    // New metrics for the dashboard:
     currentCostPerSheep: avgCostPerSheep,
     breakEvenPrice: avgCostPerSheep,
-    totalRevenue: salesRevenueAll,
-    salesRecovered: salesInvestedAll,
-    totalSheepSold: totalSheepSold(sales),
+    totalRevenue: revenueAll,
+    salesRecovered: recoveredAll,
+    totalSheepSold: totalSheepSold(own),
     unsoldInvestmentValue: unsoldInvestmentAll,
   }
 }

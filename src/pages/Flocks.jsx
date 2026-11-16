@@ -3,9 +3,9 @@ import { Link } from 'react-router-dom'
 import { Plus, Search, Pencil, Trash2, Receipt, Archive, ArchiveRestore } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useLocale } from '../context/LocaleContext'
-import { subscribeFlocks, subscribeExpenses, deleteFlock, setFlockArchived } from '../hooks/useFirestore'
+import { subscribeFlocks, subscribeExpenses, subscribeSales, deleteFlock, setFlockArchived } from '../hooks/useFirestore'
 import {
-  totalInvested, currentValue, realizedProfit, unrealizedProfit,
+  totalInvested, currentValue, flockProfit,
   roi, liveSheepCount, holdingDays, isArchived,
 } from '../utils/calculations'
 import { livestockEmoji } from '../utils/livestock'
@@ -70,6 +70,7 @@ export default function Flocks() {
   const { t } = useLocale()
   const [flocks, setFlocks] = useState([])
   const [expenses, setExpenses] = useState([])
+  const [sales, setSales] = useState([])
   const [showAdd, setShowAdd] = useState(false)
   const [filter, setFilter] = useState('all') // all | active | sold | archived
   const [query, setQuery] = useState('')
@@ -78,7 +79,8 @@ export default function Flocks() {
     if (!user) return
     const u1 = subscribeFlocks(user.uid, setFlocks)
     const u2 = subscribeExpenses(user.uid, setExpenses)
-    return () => { u1(); u2() }
+    const u3 = subscribeSales(user.uid, setSales)
+    return () => { u1(); u2(); u3() }
   }, [user])
 
   const filtered = flocks
@@ -156,9 +158,9 @@ export default function Flocks() {
         <ul className="space-y-3">
           {filtered.map((f) => {
             const invested = totalInvested(f, expenses)
-            const value = currentValue(f, expenses)
-            const profit = f.status === 'sold' ? realizedProfit(f, expenses) : unrealizedProfit(f, expenses)
-            const r = roi(f, expenses)
+            const value = currentValue(f, expenses, sales)
+            const profit = flockProfit(f, expenses, sales)
+            const r = roi(f, expenses, sales)
             const archived = isArchived(f)
             return (
               <li key={f.id} className={`card ${archived ? 'opacity-70' : ''}`}>

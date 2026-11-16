@@ -92,7 +92,7 @@ export default function Reports() {
       .sort((a, b) => b.value - a.value)
   }, [scopedToFlock])
 
-  const totals = portfolioTotals(visible, scopedExpenses)
+  const totals = portfolioTotals(visible, scopedExpenses, sales)
   const totalExpenses = breakdown.reduce((s, b) => s + b.value, 0)
   const biggest = breakdown[0] || null
   const biggestPct = biggest ? (biggest.value / totalExpenses) * 100 : 0

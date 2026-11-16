@@ -4,7 +4,7 @@
 // Sales and death records are derived with the app's own calculation helpers,
 // replayed in date order, so the numbers on screen stay internally consistent
 // (cost per animal frozen at sale time, death cost = animals lost × cost basis).
-import { currentCostPerSheep, liveSheepCount, totalInvested, totalSheepLost } from '../utils/calculations'
+import { currentCostPerSheep, liveSheepCount, totalInvested, totalSheepLost } from '../utils/calculations.js'
 
 const DAY = 24 * 60 * 60 * 1000
 const now = Date.now()
@@ -184,7 +184,7 @@ export function seed() {
         if (ev.mode === 'full') {
           quantity = live
           revenue = ev.totalPrice
-          investment = totalInvested(flock, own())
+          investment = totalInvested(flock, own()) - sales.filter((s) => s.flockId === flock.id).reduce((a, s) => a + s.investmentCost, 0)
           pricePerSheep = live ? revenue / live : 0
         } else if (ev.mode === 'partial') {
           quantity = ev.quantity

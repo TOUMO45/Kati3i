@@ -4,10 +4,10 @@ import { useLocale } from '../context/LocaleContext'
 import { ModalShell } from './AddFlockModal'
 import {
   liveSheepCount, currentCostPerSheep, totalInvested, breakEvenPrice,
-  currentAvgWeight,
+  currentAvgWeight, totalInvestmentRecovered, totalRevenue,
 } from '../utils/calculations'
 import { formatMoney } from '../utils/format'
-import { addSale, updateFlock, subscribeExpenses, subscribeWeights } from '../hooks/useFirestore'
+import { addSale, updateFlock, subscribeExpenses, subscribeWeights, subscribeSales } from '../hooks/useFirestore'
 
 // New selling modal: lets the user pick between selling the entire flock at
 // once, or selling a selected quantity at a per-sheep price. Both flows record
@@ -18,6 +18,7 @@ export default function SellFlockModal({ flock, onClose, onComplete }) {
   const { t } = useLocale()
   const [expenses, setExpenses] = useState([])
   const [weights, setWeights] = useState([])
+  const [priorSales, setPriorSales] = useState([])
 
   const [mode, setMode] = useState('full') // 'full' | 'partial' | 'weight'
 
@@ -43,7 +44,8 @@ export default function SellFlockModal({ flock, onClose, onComplete }) {
     if (!user) return
     const u1 = subscribeExpenses(user.uid, setExpenses, flock.id)
     const u2 = subscribeWeights(user.uid, setWeights, flock.id)
-    return () => { u1(); u2() }
+    const u3 = subscribeSales(user.uid, setPriorSales, flock.id)
+    return () => { u1(); u2(); u3() }
   }, [user, flock.id])
 
   // Latest recorded weight for this flock (falls back to initialAvgWeight,
@@ -74,13 +76,19 @@ export default function SellFlockModal({ flock, onClose, onComplete }) {
   const cps  = currentCostPerSheep(flock, expenses)
   const totalInvestedNow = totalInvested(flock, expenses)
   const bep  = breakEvenPrice(flock, expenses)
+  // Investment not yet recovered by earlier sales of this flock. The sale that
+  // CLOSES the flock (the whole flock, or the last remaining animals) carries
+  // all of it, so a flock's sales always add up to revenue − total invested.
+  // Before this, selling the rest after a partial sale charged the full
+  // investment a second time and recorded a large false loss.
+  const unrecovered = Math.max(0, totalInvestedNow - totalInvestmentRecovered(priorSales))
 
   // Live preview numbers — recomputed on every keystroke.
   const preview = useMemo(() => {
     if (mode === 'full') {
       const tp = Number(totalPrice || 0)
       const revenue = tp
-      const investment = totalInvestedNow
+      const investment = unrecovered
       const profit = revenue - investment
       const qty = live
       return {
@@ -93,7 +101,7 @@ export default function SellFlockModal({ flock, onClose, onComplete }) {
       const q = Number(quantity || 0)
       const pps = Number(pricePerSheep || 0)
       const revenue = q * pps
-      const investment = cps * q
+      const investment = q > 0 && q >= live ? unrecovered : cps * q
       const profit = revenue - investment
       return {
         quantity: q, revenue, investment, profit,
@@ -107,14 +115,14 @@ export default function SellFlockModal({ flock, onClose, onComplete }) {
     const ppk = Number(pricePerKg || 0)
     const totalWeight = q * w
     const revenue = totalWeight * ppk
-    const investment = cps * q
+    const investment = q > 0 && q >= live ? unrecovered : cps * q
     const profit = revenue - investment
     return {
       quantity: q, revenue, investment, profit,
       pricePerSheep: q ? revenue / q : 0,
       avgWeight: w, totalWeight, pricePerKg: ppk,
     }
-  }, [mode, totalPrice, quantity, pricePerSheep, weightQty, avgWeight, pricePerKg, live, cps, totalInvestedNow])
+  }, [mode, totalPrice, quantity, pricePerSheep, weightQty, avgWeight, pricePerKg, live, cps, unrecovered])
 
   const submit = async (e) => {
     e.preventDefault()
@@ -181,7 +189,8 @@ export default function SellFlockModal({ flock, onClose, onComplete }) {
         Object.assign(flockUpdate, {
           status: 'sold',
           soldDate: saleDate,
-          soldPrice: preview.revenue,
+          // Everything the flock was sold for, across all of its sales.
+          soldPrice: totalRevenue(priorSales) + preview.revenue,
           soldCount: Number(flock.initialCount || 0) - (expenses.filter((e) => e.flockId === flock.id && e.type === 'death').reduce((s, e) => s + Number(e.sheepLost || 0), 0)),
         })
       }
@@ -280,7 +289,7 @@ export default function SellFlockModal({ flock, onClose, onComplete }) {
               className="input"
               type="number" min="0" inputMode="decimal" step="0.01"
               value={totalPrice} onChange={(e) => setTotalPrice(e.target.value)}
-              placeholder={`${Math.round(bep * live)}`} autoFocus
+              placeholder={`${Math.round(unrecovered)}`} autoFocus
             />
             <div className="text-xs text-stone-500 dark:text-stone-400 mt-1">
               {t('sell.fullHintBreakEven', { bep: formatMoney(bep), live })}

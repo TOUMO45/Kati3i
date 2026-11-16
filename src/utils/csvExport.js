@@ -5,7 +5,7 @@
 import * as XLSX from 'xlsx'
 import {
   totalInvested, totalSheepLost, liveSheepCount,
-  currentCostPerSheep, currentValue, holdingDays, roi, totalExpenses,
+  currentCostPerSheep, currentValue, holdingDays, roi, totalExpenses, flockProfit, flockRevenue,
   totalRevenue, totalRealizedProfit, currentAvgWeight,
 } from './calculations'
 
@@ -38,13 +38,11 @@ function buildSummarySheet(flock, flockExpenses, flockSales, flockWeights) {
   const lost     = totalSheepLost(flockExpenses, flock.id)
   const live     = liveSheepCount(flock, flockExpenses)
   const cps      = currentCostPerSheep(flock, flockExpenses)
-  const value    = currentValue(flock, flockExpenses)
+  const value    = currentValue(flock, flockExpenses, flockSales)
   const days     = holdingDays(flock)
-  const flockRoi = roi(flock, flockExpenses)
-  const revenue  = totalRevenue(flockSales) +
-    (flock.status === 'sold' ? Number(flock.soldPrice || 0) : 0)
-  const profit   = totalRealizedProfit(flockSales) +
-    (flock.status === 'sold' ? (Number(flock.soldPrice || 0) - invested) : 0)
+  const flockRoi = roi(flock, flockExpenses, flockSales)
+  const revenue  = flockRevenue(flock, flockSales)
+  const profit   = flockProfit(flock, flockExpenses, flockSales)
 
   const rows = [
     ['Flock Report', flock.name],

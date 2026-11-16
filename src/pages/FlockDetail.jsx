@@ -14,7 +14,7 @@ import {
 import {
   totalInvested, currentValue, currentCostPerSheep, breakEvenPrice,
   unsoldInvestmentValue, liveSheepCount, holdingDays,
-  realizedProfit, unrealizedProfit, roi,
+  flockProfit, flockRevenue, roi,
   totalRealizedProfit, currentAvgWeight, totalLiveWeight, costPerKg,
   totalSheepLost,
 } from '../utils/calculations'
@@ -140,12 +140,11 @@ export default function FlockDetail() {
   const deathsTotal  = totalSheepLost(flockExpenses, flock.id)
   const flockWeights = weights.filter((w) => w.flockId === flock.id)
 
-  // Profit summary = sales profit + legacy full-flock-sale profit (if status=sold).
-  const legacyProfit = flock.status === 'sold'
-    ? (Number(flock.soldPrice || 0) - invested)
-    : 0
-  const profit = flock.status === 'sold' ? (flockRealized + legacyProfit) : unrealizedProfit(flock, flockExpenses)
-  const r = roi(flock, flockExpenses)
+  // Profit so far = what this flock's sales earned (unsold animals are carried
+  // at cost). Falls back to soldPrice − invested for a legacy sold flock that
+  // has no sale records.
+  const profit = flockProfit(flock, flockExpenses, sales)
+  const r = roi(flock, flockExpenses, sales)
 
   const onDeleteExpense = async (eid) => {
     if (!confirm(t('detail.deleteExpQ'))) return
@@ -221,7 +220,7 @@ export default function FlockDetail() {
 
       <div className={`card ${profit >= 0 ? 'bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-950/40 dark:to-stone-900' : 'bg-gradient-to-br from-red-50 to-white dark:from-red-950/40 dark:to-stone-900'}`}>
         <div className="text-sm text-stone-500 dark:text-stone-400">
-          {flock.status === 'sold' ? t('detail.realized') : t('detail.unrealized')}
+          {t('detail.realized')}
         </div>
         <div className={`text-3xl font-bold ${profit >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-700 dark:text-red-400'}`}>
           {formatMoney(profit)}
@@ -249,7 +248,7 @@ export default function FlockDetail() {
         />
         <MiniCard
           label={flock.status === 'sold' ? t('flocks.soldFor') : t('detail.costPerSheep')}
-          value={flock.status === 'sold' ? formatMoney(flock.soldPrice) : formatMoney(cps)}
+          value={flock.status === 'sold' ? formatMoney(flockRevenue(flock, sales)) : formatMoney(cps)}
           tone="brand"
         />
         <MiniCard

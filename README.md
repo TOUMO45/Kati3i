@@ -176,6 +176,13 @@ The maths lives in one small, dependency-free file,
 | **Total live weight** | latest average weight × live animals |
 | **Cost per KG** | total invested ÷ total live weight |
 | **Profit on a sale** | sale revenue − (cost per animal at that moment × animals sold) |
+| **Flock profit** | the sum of the profit of its sales — unsold animals are carried at cost, so they count as neither profit nor loss |
+| **ROI** | profit ÷ total invested |
+| **Portfolio value** | total invested + profit, i.e. money received from sales + money still tied up in unsold animals |
+
+The sale that closes a flock carries whatever cost earlier sales have not yet
+recovered, so a finished flock's profit always equals **everything it sold for −
+everything it cost**.
 
 Selling animals does **not** change the cost per animal — only new expenses,
 deaths or an edited purchase do. That matches how a herder actually reasons

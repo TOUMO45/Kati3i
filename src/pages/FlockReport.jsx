@@ -13,7 +13,7 @@ import {
 } from '../hooks/useFirestore'
 import {
   totalInvested, totalExpenses, totalSheepLost, liveSheepCount,
-  currentCostPerSheep, currentValue, holdingDays, roi,
+  currentCostPerSheep, currentValue, holdingDays, roi, flockProfit, flockRevenue,
   totalRevenue, totalRealizedProfit, currentAvgWeight, expenseBreakdown,
   EXPENSE_TYPES,
 } from '../utils/calculations'
@@ -176,13 +176,11 @@ export default function FlockReport() {
   const lost     = totalSheepLost(flockExpenses, flock.id)
   const live     = liveSheepCount(flock, flockExpenses)
   const cps      = currentCostPerSheep(flock, flockExpenses)
-  const value    = currentValue(flock, flockExpenses)
+  const value    = currentValue(flock, flockExpenses, flockSales)
   const days     = holdingDays(flock)
-  const flockRoi = roi(flock, flockExpenses)
-  const revenue  = totalRevenue(flockSales) +
-    (flock.status === 'sold' ? Number(flock.soldPrice || 0) : 0)
-  const profit   = totalRealizedProfit(flockSales) +
-    (flock.status === 'sold' ? (Number(flock.soldPrice || 0) - invested) : 0)
+  const flockRoi = roi(flock, flockExpenses, flockSales)
+  const revenue  = flockRevenue(flock, flockSales)
+  const profit   = flockProfit(flock, flockExpenses, flockSales)
   const avgWeight = currentAvgWeight(flock, flockWeights)
 
   const breakdown = expenseBreakdown(flockExpenses, flock.id)

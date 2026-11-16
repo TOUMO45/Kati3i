@@ -14,8 +14,8 @@ import {
   setFlockArchived,
 } from '../hooks/useFirestore'
 import {
-  portfolioTotals, totalInvested, currentValue, realizedProfit,
-  unrealizedProfit, roi, liveSheepCount, holdingDays, visibleFlocks,
+  portfolioTotals, totalInvested, currentValue, flockProfit, flockRevenue,
+  roi, liveSheepCount, holdingDays, visibleFlocks,
   isArchived, currentCostPerSheep,
   totalLiveWeight, currentAvgWeight,
 } from '../utils/calculations'
@@ -115,7 +115,7 @@ function FlockActions({ flock }) {
   )
 }
 
-function SoldFlockCard({ flock, expenses }) {
+function SoldFlockCard({ flock, expenses, sales }) {
   const { user } = useAuth()
   const { t } = useLocale()
   const [restoring, setRestoring] = useState(false)
@@ -123,9 +123,9 @@ function SoldFlockCard({ flock, expenses }) {
   const flockExpenses = expenses.filter((e) => e.flockId === flock.id)
   const expenseCount = flockExpenses.length
   const expenseTotal = flockExpenses.reduce((s, e) => s + Number(e.amount || 0), 0)
-  const soldPrice = Number(flock.soldPrice || 0)
-  const profit = realizedProfit(flock, expenses)
-  const r = roi(flock, expenses)
+  const soldPrice = flockRevenue(flock, sales)
+  const profit = flockProfit(flock, expenses, sales)
+  const r = roi(flock, expenses, sales)
   const days = holdingDays(flock)
   const positive = profit >= 0
 
@@ -514,8 +514,8 @@ export default function Dashboard() {
               const invested = totalInvested(f, expenses)
               const cps      = currentCostPerSheep(f, expenses)
               const value    = currentValue(f, expenses)
-              const profit   = unrealizedProfit(f, expenses)
-              const r        = roi(f, expenses)
+              const profit   = flockProfit(f, expenses, sales)
+              const r        = roi(f, expenses, sales)
               const positive = profit >= 0
               return (
                 <li
@@ -585,7 +585,7 @@ export default function Dashboard() {
           <SectionHeader icon={HandCoins} title={t('flocks.soldSection')} />
           <ul className="space-y-3">
             {soldFlocks.map((f) => (
-              <SoldFlockCard key={f.id} flock={f} expenses={expenses} />
+              <SoldFlockCard key={f.id} flock={f} expenses={expenses} sales={sales} />
             ))}
           </ul>
         </div>
