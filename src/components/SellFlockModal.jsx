@@ -73,9 +73,9 @@ export default function SellFlockModal({ flock, onClose, onComplete }) {
   }, [mode])
 
   const live = liveSheepCount(flock, expenses)
-  const cps  = currentCostPerSheep(flock, expenses)
+  const cps  = currentCostPerSheep(flock, expenses, priorSales)
   const totalInvestedNow = totalInvested(flock, expenses)
-  const bep  = breakEvenPrice(flock, expenses)
+  const bep  = breakEvenPrice(flock, expenses, priorSales)
   // Investment not yet recovered by earlier sales of this flock. The sale that
   // CLOSES the flock (the whole flock, or the last remaining animals) carries
   // all of it, so a flock's sales always add up to revenue − total invested.

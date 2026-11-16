@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { addExpense, updateExpense, getFlock, subscribeExpenses } from '../hooks/useFirestore'
+import { addExpense, updateExpense, getFlock, subscribeExpenses, subscribeSales } from '../hooks/useFirestore'
 import { useLocale } from '../context/LocaleContext'
 import { useExpenseTypes } from '../hooks/useExpenseTypes'
 import { ModalShell } from './AddFlockModal'
@@ -22,6 +22,7 @@ export default function AddExpenseModal({ flockId, expense, onClose, onSaved, in
   const [error, setError] = useState(null)
   const [flock, setFlock] = useState(null)
   const [flockExpenses, setFlockExpenses] = useState([])
+  const [flockSales, setFlockSales] = useState([])
 
   const isDeath = type === 'death'
 
@@ -30,7 +31,8 @@ export default function AddExpenseModal({ flockId, expense, onClose, onSaved, in
     let cancelled = false
     getFlock(user.uid, flockId).then((f) => { if (!cancelled) setFlock(f) })
     const unsub = subscribeExpenses(user.uid, setFlockExpenses, flockId)
-    return () => { cancelled = true; unsub?.() }
+    const unsubSales = subscribeSales(user.uid, setFlockSales, flockId)
+    return () => { cancelled = true; unsub?.(); unsubSales?.() }
   }, [user?.uid, flockId])
 
   // When editing a death record, exclude that record itself from the cost basis
@@ -39,7 +41,7 @@ export default function AddExpenseModal({ flockId, expense, onClose, onSaved, in
   const expensesForCost = isEdit
     ? flockExpenses.filter((e) => e.id !== expense?.id)
     : flockExpenses
-  const currentPrice = flock ? currentCostPerSheep(flock, expensesForCost) : 0
+  const currentPrice = flock ? currentCostPerSheep(flock, expensesForCost, flockSales) : 0
   const deathAmount = isDeath ? (Number(sheepLost) || 0) * currentPrice : 0
 
   const submit = async (e) => {

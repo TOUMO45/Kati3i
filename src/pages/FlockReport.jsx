@@ -14,6 +14,7 @@ import {
 import {
   totalInvested, totalExpenses, totalSheepLost, liveSheepCount,
   currentCostPerSheep, currentValue, holdingDays, roi, flockProfit, flockRevenue,
+  expenseAmount,
   totalRevenue, totalRealizedProfit, currentAvgWeight, expenseBreakdown,
   EXPENSE_TYPES,
 } from '../utils/calculations'
@@ -175,7 +176,7 @@ export default function FlockReport() {
   const expSum   = totalExpenses(flockExpenses, flock.id)
   const lost     = totalSheepLost(flockExpenses, flock.id)
   const live     = liveSheepCount(flock, flockExpenses)
-  const cps      = currentCostPerSheep(flock, flockExpenses)
+  const cps      = currentCostPerSheep(flock, flockExpenses, flockSales)
   const value    = currentValue(flock, flockExpenses, flockSales)
   const days     = holdingDays(flock)
   const flockRoi = roi(flock, flockExpenses, flockSales)
@@ -195,7 +196,7 @@ export default function FlockReport() {
     ...EXPENSE_TYPES.map((et) => {
       const v = flockExpenses
         .filter((e) => e.type === et.id)
-        .reduce((s, e) => s + Number(e.amount || 0), 0)
+        .reduce((s, e) => s + expenseAmount(e), 0)
       return { name: t(`type.${et.id}`), value: v, color: et.color }
     }).filter((p) => p.value > 0),
   ]

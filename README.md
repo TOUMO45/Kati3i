@@ -169,12 +169,13 @@ The maths lives in one small, dependency-free file,
 
 | Number | Formula |
 |---|---|
-| **Total invested** | purchase price + every expense on the flock |
-| **Cost per animal** | total invested ÷ (animals bought − animals lost) |
-| **Break-even price** | equal to the cost per animal — sell above it to profit |
+| **Total invested** | purchase price + every expense paid for the flock |
 | **Live animals** | animals bought − animals lost − animals sold |
+| **Cost per animal** | (total invested − cost already charged to sales) ÷ live animals |
+| **Break-even price** | equal to the cost per animal — sell above it to profit |
+| **Unsold value** | cost per animal × live animals: the money still tied up in the flock |
 | **Total live weight** | latest average weight × live animals |
-| **Cost per KG** | total invested ÷ total live weight |
+| **Cost per KG** | unsold value ÷ total live weight |
 | **Profit on a sale** | sale revenue − (cost per animal at that moment × animals sold) |
 | **Flock profit** | the sum of the profit of its sales — unsold animals are carried at cost, so they count as neither profit nor loss |
 | **ROI** | profit ÷ total invested |
@@ -184,9 +185,17 @@ The sale that closes a flock carries whatever cost earlier sales have not yet
 recovered, so a finished flock's profit always equals **everything it sold for −
 everything it cost**.
 
-Selling animals does **not** change the cost per animal — only new expenses,
-deaths or an edited purchase do. That matches how a herder actually reasons
-about what each head has cost.
+This is the weighted-average cost method, and it behaves the way a herder
+expects:
+
+- **Selling** animals does not change the cost per animal — they leave and take
+  their share of the cost with them.
+- **A new expense** raises it, spread only over the animals still in the flock.
+  Feed bought after a sale is never charged to animals that are already gone.
+- **A death** raises it, because the same money is now carried by fewer animals.
+  The value of the lost animal is shown for your records but is not added to
+  expenses — that money is already counted in the purchase price and the feed.
+- **Deleting a sale** puts its animals back in the flock.
 
 ## Privacy and security
 

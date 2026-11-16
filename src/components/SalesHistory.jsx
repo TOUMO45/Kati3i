@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { History, Trash2 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useLocale } from '../context/LocaleContext'
-import { subscribeSales, deleteSale } from '../hooks/useFirestore'
+import { subscribeSales, deleteSale, getFlock, updateFlock } from '../hooks/useFirestore'
 import { formatMoney, formatDate } from '../utils/format'
 
 // Sales history for a single flock. Optionally pass flockId=null to render
@@ -27,6 +27,16 @@ export default function SalesHistory({ flockId = null, compact = false }) {
   const onDelete = async (s) => {
     if (!confirm(t('sales.deleteQ', { type: t(saleTypeKey(s)), qty: s.quantitySold }))) return
     await deleteSale(user.uid, s.id)
+    // A deleted sale never happened: put its animals back in the flock, and
+    // reopen the flock if that sale had closed it. Without this the animals
+    // stayed counted as sold with no sale behind them.
+    const flock = await getFlock(user.uid, s.flockId)
+    if (!flock) return
+    const patch = {
+      soldCount: Math.max(0, Number(flock.soldCount || 0) - Number(s.quantitySold || 0)),
+    }
+    if (flock.status === 'sold') Object.assign(patch, { status: 'active', soldPrice: null, soldDate: null })
+    await updateFlock(user.uid, s.flockId, patch)
   }
 
   if (sales.length === 0) {

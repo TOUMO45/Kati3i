@@ -16,7 +16,7 @@ import {
 import {
   portfolioTotals, totalInvested, currentValue, flockProfit, flockRevenue,
   roi, liveSheepCount, holdingDays, visibleFlocks,
-  isArchived, currentCostPerSheep,
+  isArchived, currentCostPerSheep, unsoldInvestmentValue, expenseAmount,
   totalLiveWeight, currentAvgWeight,
 } from '../utils/calculations'
 import { livestockEmoji } from '../utils/livestock'
@@ -120,9 +120,10 @@ function SoldFlockCard({ flock, expenses, sales }) {
   const { t } = useLocale()
   const [restoring, setRestoring] = useState(false)
   const invested = totalInvested(flock, expenses)
-  const flockExpenses = expenses.filter((e) => e.flockId === flock.id)
+  // Money spent only — a death record is not a payment.
+  const flockExpenses = expenses.filter((e) => e.flockId === flock.id && e.type !== 'death')
   const expenseCount = flockExpenses.length
-  const expenseTotal = flockExpenses.reduce((s, e) => s + Number(e.amount || 0), 0)
+  const expenseTotal = flockExpenses.reduce((s, e) => s + expenseAmount(e), 0)
   const soldPrice = flockRevenue(flock, sales)
   const profit = flockProfit(flock, expenses, sales)
   const r = roi(flock, expenses, sales)
@@ -248,7 +249,7 @@ export default function Dashboard() {
   const totalExpensesOnly = useMemo(
     () => expenses
       .filter((e) => visible.some((f) => f.id === e.flockId))
-      .reduce((s, e) => s + Number(e.amount || 0), 0),
+      .reduce((s, e) => s + expenseAmount(e), 0),
     [expenses, visible]
   )
   const buyPriceTotal = useMemo(
@@ -263,7 +264,8 @@ export default function Dashboard() {
   // - totalAnimals: sum of every flock's *original* count (gives a stable
   //   "size of operation" figure that doesn't shrink as you sell).
   // - liveWeightAll: Σ (currentAvgWeight × liveAnimals) per flock.
-  // - costPerKgAll : Σ totalInvested / Σ live weight (weighted across flocks).
+  // - costPerKgAll : Σ cost of unsold animals / Σ live weight, over the flocks
+  //   that have a recorded weight.
   const totalAnimals = useMemo(
     () => activeFlocks.reduce((s, f) => s + Number(f.initialCount || 0), 0),
     [activeFlocks]
@@ -273,8 +275,10 @@ export default function Dashboard() {
     [activeFlocks, expenses, weights]
   )
   const investedActive = useMemo(
-    () => activeFlocks.reduce((s, f) => s + totalInvested(f, expenses), 0),
-    [activeFlocks, expenses]
+    () => activeFlocks
+      .filter((f) => totalLiveWeight(f, expenses, weights) > 0)
+      .reduce((s, f) => s + unsoldInvestmentValue(f, expenses, sales), 0),
+    [activeFlocks, expenses, weights, sales]
   )
   const costPerKgAll = liveWeightAll > 0 ? investedActive / liveWeightAll : 0
   const anyFlockHasWeight = activeFlocks.some((f) => currentAvgWeight(f, weights) > 0)
@@ -366,7 +370,7 @@ export default function Dashboard() {
             icon={Receipt}
             label={t('dash.stat.expenses')}
             value={formatMoney(totalExpensesOnly)}
-            hint={t('dash.hint.entries', { n: expenses.filter((e) => visible.some((f) => f.id === e.flockId)).length })}
+            hint={t('dash.hint.entries', { n: expenses.filter((e) => e.type !== 'death' && visible.some((f) => f.id === e.flockId)).length })}
             tone="warn"
           />
         </div>
@@ -456,7 +460,7 @@ export default function Dashboard() {
                       <span className="truncate font-medium">{f.name}</span>
                     </Link>
                     <span className="text-2xl font-bold tabular-nums shrink-0">
-                      {formatMoney(currentCostPerSheep(f, expenses))}
+                      {formatMoney(currentCostPerSheep(f, expenses, sales))}
                     </span>
                   </div>
                 )
@@ -466,7 +470,7 @@ export default function Dashboard() {
               // weighted-average number — that was the source of confusion.
               <ul className="space-y-2">
                 {activeFlocks.map((f) => {
-                  const cps = currentCostPerSheep(f, expenses)
+                  const cps = currentCostPerSheep(f, expenses, sales)
                   return (
                     <li key={f.id} className="flex items-center justify-between gap-2 text-sm">
                       <Link to={`/flocks/${f.id}`} className="flex items-center gap-1.5 min-w-0 hover:underline">
@@ -512,8 +516,8 @@ export default function Dashboard() {
             {activeFlocks.slice(0, 5).map((f) => {
               const live     = liveSheepCount(f, expenses)
               const invested = totalInvested(f, expenses)
-              const cps      = currentCostPerSheep(f, expenses)
-              const value    = currentValue(f, expenses)
+              const cps      = currentCostPerSheep(f, expenses, sales)
+              const value    = currentValue(f, expenses, sales)
               const profit   = flockProfit(f, expenses, sales)
               const r        = roi(f, expenses, sales)
               const positive = profit >= 0

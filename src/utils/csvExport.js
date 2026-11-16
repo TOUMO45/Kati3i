@@ -37,7 +37,7 @@ function buildSummarySheet(flock, flockExpenses, flockSales, flockWeights) {
   const expSum   = totalExpenses(flockExpenses, flock.id)
   const lost     = totalSheepLost(flockExpenses, flock.id)
   const live     = liveSheepCount(flock, flockExpenses)
-  const cps      = currentCostPerSheep(flock, flockExpenses)
+  const cps      = currentCostPerSheep(flock, flockExpenses, flockSales)
   const value    = currentValue(flock, flockExpenses, flockSales)
   const days     = holdingDays(flock)
   const flockRoi = roi(flock, flockExpenses, flockSales)
@@ -80,6 +80,8 @@ function buildExpensesSheet(flockExpenses) {
     String(a.date || '').localeCompare(String(b.date || ''))
   )
   const rows = [
+    // For a death row, Amount is the value of the animals lost — not money
+    // spent, and not part of 'Total expenses'.
     ['Date', 'Type', 'Amount', 'Sheep lost', 'Note'],
     ...sorted.map((e) => [
       e.date || '',

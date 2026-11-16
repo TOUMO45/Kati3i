@@ -99,7 +99,8 @@ export default function Reports() {
 
   // Top 5 single expenses
   const topExpenses = useMemo(() => {
-    return [...scopedToFlock]
+    return scopedToFlock
+      .filter((e) => e.type !== 'death')   // a death is not a payment
       .sort((a, b) => Number(b.amount || 0) - Number(a.amount || 0))
       .slice(0, 5)
   }, [scopedToFlock])
@@ -203,7 +204,7 @@ export default function Reports() {
               icon={ArrowDownCircle}
               label={t('rep.totalExpenses')}
               value={formatMoney(totalExpenses)}
-              hint={`${scopedToFlock.length} ${t('exp.stat.entries').toLowerCase()}`}
+              hint={`${scopedToFlock.filter((e) => e.type !== 'death').length} ${t('exp.stat.entries').toLowerCase()}`}
               tone="warn"
             />
             <StatCard

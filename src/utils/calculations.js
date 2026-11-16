@@ -41,9 +41,29 @@ export function visibleFlocks(flocks) {
 
 // ─────────────────────── Per-expense helpers ───────────────────────
 
+// Money actually spent on an expense record.
+//
+// A death record's `amount` is the VALUE of the animals lost (animals × cost
+// each at that moment). It is not money paid out: that money is already inside
+// the purchase price and the feed bills. Adding it again would count the dead
+// animal twice and overstate every figure built on the investment — so a death
+// counts as 0 here. Its effect on the survivors comes from the head count:
+// the same money is now spread over fewer animals.
+export function expenseAmount(expense) {
+  if (!expense || expense.type === 'death') return 0
+  return Number(expense.amount || 0)
+}
+
 export function totalExpenses(expenses, flockId) {
   return expenses
     .filter((e) => e.flockId === flockId)
+    .reduce((sum, e) => sum + expenseAmount(e), 0)
+}
+
+// Value of the animals lost, as recorded on the death records (for display).
+export function totalDeathLoss(expenses, flockId) {
+  return expenses
+    .filter((e) => e.flockId === flockId && e.type === 'death')
     .reduce((sum, e) => sum + Number(e.amount || 0), 0)
 }
 
@@ -64,10 +84,8 @@ export function liveSheepCount(flock, expenses) {
   return Math.max(0, Number(flock.initialCount || 0) - lost - sold)
 }
 
-// Cost-basis denominator per the business rule:
-//   originalCount - deaths   (sold animals are NOT subtracted)
-// This is what currentCostPerAnimal divides by so that selling animals
-// doesn't shift the per-animal cost.
+// Animals the flock's money was ever spread over = originalCount − deaths.
+// Used for the lifetime average of a flock that has no animals left.
 export function costBasisCount(flock, expenses) {
   if (!flock) return 0
   const lost = totalSheepLost(expenses, flock.id)
@@ -76,39 +94,43 @@ export function costBasisCount(flock, expenses) {
 
 // ─────────────────────── Investment math ───────────────────────
 
-// Total amount invested in the flock so far = purchase price + every expense.
-// (Includes death expenses; a death is a real cost that contributes to the
-//  total sunk investment in the surviving animals.)
+// Total money put into the flock so far = purchase price + every cash expense.
+// Deaths add nothing here (see expenseAmount).
 export function totalInvested(flock, expenses) {
   return Number(flock.buyPrice || 0) + totalExpenses(expenses, flock.id)
 }
 
-// Cost per animal — business rule:
-//   CostPerAnimal = (PurchasePrice + TotalExpenses) / (OriginalCount - Deaths)
+// Cost per animal — weighted-average cost of the animals still in the flock:
 //
-// CRITICAL: the denominator uses costBasisCount, NOT liveSheepCount. That
-// means selling animals does NOT change the cost per animal — only new
-// expenses, deaths, or edits to purchase data move this number. This
-// matches how a herder actually thinks: the cost spent per animal is
-// locked in by the underlying economics, regardless of how many you've
-// sold off.
-export function currentCostPerSheep(flock, expenses) {
+//   (total invested − cost already charged to sales) ÷ live animals
+//
+// How it moves:
+//   • a sale at this cost leaves it unchanged — the animals leave and take
+//     their share of the cost with them;
+//   • a new expense raises it, spread only over the animals still here
+//     (feed bought after a sale is not charged to animals already gone);
+//   • a death raises it — the same money is carried by fewer animals.
+//
+// A flock with no animals left (fully sold) shows its lifetime average:
+// total invested ÷ (original count − deaths). The same lifetime average is the
+// fallback when animals are marked sold but no sale records were supplied.
+export function currentCostPerSheep(flock, expenses, sales = []) {
+  if (!flock) return 0
+  const live = liveSheepCount(flock, expenses)
+  const own = salesForFlock(sales, flock.id)
+  if (live > 0 && own.length) return remainingInvestment(flock, expenses, own) / live
   const denom = costBasisCount(flock, expenses)
-  if (!denom) return 0
-  return totalInvested(flock, expenses) / denom
+  return denom ? totalInvested(flock, expenses) / denom : 0
 }
 
-// Break-even price per sheep — by definition equals current cost per sheep.
-// Selling at this price recovers exactly the invested amount; above is profit,
-// below is loss.
+// Break-even price per animal — equals the cost per animal. Selling the
+// remaining animals at this price recovers exactly what is still tied up in
+// them; above it is profit, below it is loss.
 export const breakEvenPrice = currentCostPerSheep
 
-// Book value of unsold (still-living) sheep = currentCostPerSheep × livingCount.
-// Algebraically equals totalInvested for a single flock, but useful as a
-// semantic label on the dashboard so the user sees what capital is still tied
-// up in live inventory.
-export function unsoldInvestmentValue(flock, expenses) {
-  return currentCostPerSheep(flock, expenses) * liveSheepCount(flock, expenses)
+// Money still tied up in the unsold animals = cost per animal × live animals.
+export function unsoldInvestmentValue(flock, expenses, sales = []) {
+  return currentCostPerSheep(flock, expenses, sales) * liveSheepCount(flock, expenses)
 }
 
 // ─────────────────────── Value & profit ───────────────────────
@@ -167,7 +189,7 @@ export function flockProfit(flock, expenses, sales) {
 // For sold flocks: everything the flock was sold for.
 export function currentValue(flock, expenses, sales = []) {
   if (flock.status === 'sold') return flockRevenue(flock, sales)
-  return currentCostPerSheep(flock, expenses) * liveSheepCount(flock, expenses)
+  return unsoldInvestmentValue(flock, expenses, sales)
 }
 
 export function roi(flock, expenses, sales = []) {
@@ -250,12 +272,13 @@ export function totalLiveWeight(flock, expenses, weights) {
   return currentAvgWeight(flock, weights) * liveSheepCount(flock, expenses)
 }
 
-// Cost per kilogram = (PurchasePrice + TotalExpenses) / TotalLiveWeight.
-// Returns 0 when total live weight is 0 (no weight recorded or no animals).
-export function costPerKg(flock, expenses, weights) {
+// Cost per kilogram = money still tied up in the unsold animals ÷ their total
+// live weight. Returns 0 when total live weight is 0 (no weight recorded or no
+// animals).
+export function costPerKg(flock, expenses, weights, sales = []) {
   const tlw = totalLiveWeight(flock, expenses, weights)
   if (!tlw) return 0
-  return totalInvested(flock, expenses) / tlw
+  return unsoldInvestmentValue(flock, expenses, sales) / tlw
 }
 
 // ─────────────────────── Holding period ───────────────────────
@@ -292,8 +315,6 @@ export function portfolioTotals(flocks, expenses, sales = []) {
   let activeCount = 0
   let soldCount = 0
   let sheepTotal = 0
-  let activeInvested = 0
-  let activeBasis = 0
 
   for (const f of active) {
     totalInvestedAll += totalInvested(f, expenses)
@@ -305,16 +326,14 @@ export function portfolioTotals(flocks, expenses, sales = []) {
     } else {
       activeCount++
       sheepTotal          += liveSheepCount(f, expenses)
-      unsoldInvestmentAll += unsoldInvestmentValue(f, expenses)
-      activeInvested      += totalInvested(f, expenses)
-      activeBasis         += costBasisCount(f, expenses)
+      unsoldInvestmentAll += unsoldInvestmentValue(f, expenses, own)
     }
   }
 
   const roiAll = totalInvestedAll ? (profitAll / totalInvestedAll) * 100 : 0
 
-  // Weighted average cost per animal across flocks that are still active.
-  const avgCostPerSheep = activeBasis > 0 ? activeInvested / activeBasis : 0
+  // Weighted average cost per unsold animal across flocks that are still active.
+  const avgCostPerSheep = sheepTotal > 0 ? unsoldInvestmentAll / sheepTotal : 0
 
   return {
     totalInvested: totalInvestedAll,
@@ -336,14 +355,14 @@ export function portfolioTotals(flocks, expenses, sales = []) {
 
 // ─────────────────────── Expense breakdown (reports) ───────────────────────
 
-// Excludes expenses belonging to archived flocks.
+// Money spent per category. Death records count as 0 (see expenseAmount).
 export function expenseBreakdown(expenses, flockId) {
   const subset = flockId
     ? expenses.filter((e) => e.flockId === flockId)
     : expenses
   const map = {}
   for (const e of subset) {
-    map[e.type] = (map[e.type] || 0) + Number(e.amount || 0)
+    map[e.type] = (map[e.type] || 0) + expenseAmount(e)
   }
   return EXPENSE_TYPES.map((t) => ({
     type: t.id,

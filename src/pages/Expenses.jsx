@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Search, Pencil, Trash2, Wheat, Pill, Truck, Skull, MoreHorizontal, Droplet, Filter } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useLocale } from '../context/LocaleContext'
+import { expenseAmount } from '../utils/calculations'
 import { subscribeFlocks, subscribeExpenses, deleteExpense } from '../hooks/useFirestore'
 import { formatMoney, formatDate } from '../utils/format'
 import { useExpenseTypes } from '../hooks/useExpenseTypes'
@@ -58,12 +59,14 @@ export default function Expenses() {
     return out
   }, [expenses, flockFilter, typeFilter, query, sortBy, sortDir, flockById])
 
-  const totalAmount = filtered.reduce((s, e) => s + Number(e.amount || 0), 0)
+  // Money spent. Death rows stay in the list with their loss value, but they
+  // are not payments, so they are left out of the total and the top category.
+  const totalAmount = filtered.reduce((s, e) => s + expenseAmount(e), 0)
   const deathLosses = filtered.filter((e) => e.type === 'death')
   const totalSheepLost = deathLosses.reduce((s, e) => s + Number(e.sheepLost || 0), 0)
   const topCategory = useMemo(() => {
     const counts = {}
-    for (const e of filtered) counts[e.type] = (counts[e.type] || 0) + Number(e.amount || 0)
+    for (const e of filtered) counts[e.type] = (counts[e.type] || 0) + expenseAmount(e)
     let best = null, bestV = 0
     for (const [k, v] of Object.entries(counts)) if (v > bestV) { best = k; bestV = v }
     return best ? types.find((x) => x.id === best) : null

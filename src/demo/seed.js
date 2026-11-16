@@ -3,7 +3,8 @@
 //
 // Sales and death records are derived with the app's own calculation helpers,
 // replayed in date order, so the numbers on screen stay internally consistent
-// (cost per animal frozen at sale time, death cost = animals lost × cost basis).
+// (cost per animal frozen at sale time, death loss value = animals lost × cost
+// per animal at that moment).
 import { currentCostPerSheep, liveSheepCount, totalInvested, totalSheepLost } from '../utils/calculations.js'
 
 const DAY = 24 * 60 * 60 * 1000
@@ -154,6 +155,7 @@ export function seed() {
     flocks.push(flock)
 
     const own = () => expenses.filter((e) => e.flockId === flock.id)
+    const prior = () => sales.filter((s) => s.flockId === flock.id)
     const events = [...plan.events].sort((a, b) => b.d - a.d)
 
     for (const ev of events) {
@@ -166,7 +168,7 @@ export function seed() {
           date, note: ev.note || '', sheepLost: 0, createdAt,
         })
       } else if (ev.kind === 'death') {
-        const cps = currentCostPerSheep(flock, own())
+        const cps = currentCostPerSheep(flock, own(), prior())
         expenses.push({
           id: id('exp'), flockId: flock.id, type: 'death',
           amount: Number((cps * ev.sheepLost).toFixed(2)),
@@ -179,12 +181,12 @@ export function seed() {
         })
       } else if (ev.kind === 'sale') {
         const live = liveSheepCount(flock, own())
-        const cps = currentCostPerSheep(flock, own())
+        const cps = currentCostPerSheep(flock, own(), prior())
         let quantity, revenue, investment, pricePerSheep
         if (ev.mode === 'full') {
           quantity = live
           revenue = ev.totalPrice
-          investment = totalInvested(flock, own()) - sales.filter((s) => s.flockId === flock.id).reduce((a, s) => a + s.investmentCost, 0)
+          investment = totalInvested(flock, own()) - prior().reduce((a, s) => a + s.investmentCost, 0)
           pricePerSheep = live ? revenue / live : 0
         } else if (ev.mode === 'partial') {
           quantity = ev.quantity
