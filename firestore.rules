@@ -1,0 +1,40 @@
+rules_version = '2';
+
+// Firestore security rules for Sheep Tracker.
+// All collections live under users/{uid}/. Users can only access their own data.
+//
+// Deploy with: firebase deploy --only firestore:rules
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper: a request is owned by the user if the auth uid matches the path segment.
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    match /users/{uid} {
+      allow read, write: if isOwner(uid);
+
+      match /flocks/{flockId} {
+        allow read, write: if isOwner(uid);
+      }
+
+      match /expenses/{expenseId} {
+        allow read, write: if isOwner(uid);
+      }
+
+      match /sales/{saleId} {
+        allow read, write: if isOwner(uid);
+      }
+
+      // Weight records — added with the weight-tracking feature. Without this
+      // rule, cascade-deleting a flock would fail (Firestore denies the
+      // weights cleanup, the Promise.all rejects, the flock doc is never
+      // removed, and the UI silently shows the flock again on the next
+      // snapshot). Same per-user ownership pattern as the others.
+      match /weights/{weightId} {
+        allow read, write: if isOwner(uid);
+      }
+    }
+  }
+}

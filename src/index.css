@@ -1,0 +1,133 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body, #root { height: 100%; }
+
+  /* Theme defaults: light is the default. The [data-theme="dark"] selector
+     applies whenever the document has that attribute. This selector is set
+     by ThemeContext (and by the inline boot script) so the dark mode is
+     controlled by a single source of truth. */
+  html { color-scheme: light; }
+  html[data-theme="dark"] { color-scheme: dark; }
+
+  body {
+    @apply bg-stone-50 text-stone-800 antialiased;
+    -webkit-tap-highlight-color: transparent;
+    transition: background-color 200ms ease, color 200ms ease;
+  }
+  html[data-theme="dark"] body { @apply bg-stone-950 text-stone-100; }
+
+  input, select, textarea, button {
+    @apply font-sans;
+    font-size: 16px; /* iOS no-zoom on focus */
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-white rounded-2xl shadow-sm border border-stone-100 p-4 sm:p-5;
+  }
+  html[data-theme="dark"] .card {
+    @apply bg-stone-900 border-stone-800;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium
+           transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-primary {
+    @apply btn bg-brand-600 text-white hover:bg-brand-700;
+  }
+  .btn-secondary {
+    @apply btn bg-stone-100 text-stone-800 hover:bg-stone-200;
+  }
+  html[data-theme="dark"] .btn-secondary {
+    @apply bg-stone-800 text-stone-100 hover:bg-stone-700;
+  }
+  .btn-danger {
+    @apply btn bg-red-600 text-white hover:bg-red-700;
+  }
+  .btn-ghost {
+    @apply btn text-stone-600 hover:bg-stone-100;
+  }
+  html[data-theme="dark"] .btn-ghost {
+    @apply text-stone-300 hover:bg-stone-800;
+  }
+  .input {
+    @apply w-full px-3.5 py-2.5 rounded-xl border border-stone-200 bg-white text-stone-900
+           focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent
+           placeholder:text-stone-400;
+  }
+  html[data-theme="dark"] .input {
+    @apply bg-stone-800 border-stone-700 text-stone-100 placeholder:text-stone-500;
+  }
+  .label {
+    @apply block text-sm font-medium text-stone-700 mb-1.5;
+  }
+  html[data-theme="dark"] .label { @apply text-stone-300; }
+  .badge {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium;
+  }
+  .divider {
+    @apply border-stone-100;
+  }
+  html[data-theme="dark"] .divider { @apply border-stone-800; }
+
+  /* Single source of truth for inline form/page error banners. The previous
+     hardcoded `bg-red-50 text-red-600 border-red-100` pattern stayed light-red
+     in dark mode, which looked broken — this class handles both themes. */
+  .alert-error {
+    @apply text-sm px-3 py-2 rounded-lg border
+           text-red-700 bg-red-50 border-red-100;
+  }
+  html[data-theme="dark"] .alert-error {
+    @apply text-red-300 bg-red-950/40 border-red-900;
+  }
+}
+
+/* Smooth color transitions on theme switch so cards/text don't snap. The body
+   already has the transition; this widens it to common interactive surfaces. */
+.card, .btn, .input, header, nav, .alert-error {
+  transition: background-color 200ms ease, border-color 200ms ease, color 200ms ease;
+}
+
+/* Hide spinner on number inputs (mobile UX) */
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type=number] { -moz-appearance: textfield; }
+
+/* ─────────────────────── Mobile / PWA polish ─────────────────────── */
+
+/* Block iOS double-tap zoom on chrome-less UI surfaces (buttons, nav, header). */
+button, [role="button"], a {
+  touch-action: manipulation;
+}
+
+/* Stop horizontal scroll on any overlong row (long flock names, currency). */
+html, body { overflow-x: hidden; }
+
+/* iOS notch / Android gesture-bar safe areas. The header gets top padding to
+   sit below the status bar; the fixed bottom nav gets bottom padding so it
+   doesn't sit on top of the home indicator. */
+.safe-pad-top    { padding-top:    env(safe-area-inset-top); }
+.safe-pad-bottom { padding-bottom: env(safe-area-inset-bottom); }
+
+/* Bottom-sheet modal handle — purely visual; appears only on narrow screens
+   where the modal docks to the bottom of the viewport. */
+@media (max-width: 640px) {
+  .modal-sheet::before {
+    content: "";
+    position: absolute;
+    top: 8px; left: 50%;
+    transform: translateX(-50%);
+    width: 36px; height: 4px; border-radius: 999px;
+    background: rgba(120,113,108,0.35);
+  }
+  html[data-theme="dark"] .modal-sheet::before {
+    background: rgba(231,229,228,0.25);
+  }
+}

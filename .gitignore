@@ -1,0 +1,24 @@
+# dependencies & build output
+node_modules
+dist
+dist-demo
+dist-ssr
+
+# secrets / local environment — never commit
+.env
+.env.local
+.env.*.local
+.firebaserc
+.firebase/
+firebase-debug.log
+*-firebase-adminsdk-*.json
+serviceAccount*.json
+
+# local tooling
+.claude/
+graphify-out/
+*.log
+.DS_Store
+.vscode
+.idea
+.capture/

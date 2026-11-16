@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#16a34a" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Flock Manager" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="description" content="Flock Manager — track livestock costs, weights, and profits across multiple flocks." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <title>Flock Manager</title>
+    <script>
+      // Apply theme + locale + direction before paint to avoid a flash.
+      (function () {
+        try {
+          var savedTheme = localStorage.getItem('sheep-tracker-theme');
+          var isDark = savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          // Set data-theme (not the .dark class) — the Tailwind config uses
+          // [data-theme="dark"] as its dark-mode selector.
+          document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+
+          var savedLang = localStorage.getItem('sheep-tracker-lang');
+          // Operator precedence trap: `||` binds tighter than `?:`, so the old
+          // single-line form forced 'ar' whenever savedLang was truthy. Be
+          // explicit so saving 'en' actually stays 'en'.
+          var lang;
+          if (savedLang === 'ar' || savedLang === 'en') {
+            lang = savedLang;
+          } else {
+            lang = (navigator.language || 'en').toLowerCase().startsWith('ar') ? 'ar' : 'en';
+          }
+          var dir = lang === 'ar' ? 'rtl' : 'ltr';
+          document.documentElement.lang = lang;
+          document.documentElement.dir = dir;
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body class="bg-stone-50 dark:bg-stone-950">
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#16a34a"/>
+  <g transform="translate(64, 96)">
+    <!-- Wool body -->
+    <circle cx="192" cy="200" r="120" fill="#f5ebe0"/>
+    <!-- Tufts -->
+    <circle cx="120" cy="120" r="40" fill="#f5ebe0"/>
+    <circle cx="192" cy="90" r="42" fill="#f5ebe0"/>
+    <circle cx="264" cy="120" r="40" fill="#f5ebe0"/>
+    <circle cx="312" cy="200" r="38" fill="#f5ebe0"/>
+    <circle cx="72" cy="200" r="38" fill="#f5ebe0"/>
+    <!-- Ears -->
+    <ellipse cx="142" cy="156" rx="22" ry="34" fill="#8b623d"/>
+    <ellipse cx="242" cy="156" rx="22" ry="34" fill="#8b623d"/>
+    <!-- Face -->
+    <ellipse cx="192" cy="220" rx="80" ry="70" fill="#3a2818"/>
+    <!-- Eyes -->
+    <circle cx="166" cy="216" r="9" fill="#f5ebe0"/>
+    <circle cx="218" cy="216" r="9" fill="#f5ebe0"/>
+    <circle cx="166" cy="216" r="4" fill="#1c1917"/>
+    <circle cx="218" cy="216" r="4" fill="#1c1917"/>
+    <!-- Nose/mouth -->
+    <ellipse cx="192" cy="252" rx="14" ry="8" fill="#1c1917"/>
+    <path d="M 180 268 Q 192 278 204 268" stroke="#1c1917" stroke-width="3" fill="none" stroke-linecap="round"/>
+  </g>
+  <!-- Ground / grass -->
+  <path d="M 32 400 Q 128 430 224 405 T 480 410" stroke="#fff" stroke-width="14" fill="none" stroke-linecap="round" opacity="0.4"/>
+</svg>
