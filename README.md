@@ -15,6 +15,7 @@
   <img alt="Tailwind CSS" src="https://img.shields.io/badge/Tailwind-3-38bdf8?logo=tailwindcss&logoColor=white">
   <img alt="Firebase" src="https://img.shields.io/badge/Firebase-Auth%20·%20Firestore%20·%20Storage-ffca28?logo=firebase&logoColor=black">
   <img alt="Languages" src="https://img.shields.io/badge/العربية%20+%20English-RTL%20ready-16a34a">
+  <a href="LICENSE"><img alt="Licence: free for herders, commercial use by permission" src="https://img.shields.io/badge/licence-free%20for%20herders%20·%20commercial%20by%20permission-f59e0b"></a>
 </p>
 
 ---
@@ -34,10 +35,20 @@ Inside the app it is called **Flock Manager**.
 ## Watch it work
 
 <p align="center">
-  <img src="docs/promo.gif" alt="Kati3i promo — a walkthrough of the app" width="100%">
+  <a href="docs/promo-vertical.mp4"><img src="docs/promo-vertical.gif" alt="Kati3i in 90 seconds — who it is for, how to use it in four steps, and what you gain" width="320"></a>
 </p>
 
-<p align="center"><a href="docs/promo.mp4">▶ Download the full-quality video (MP4, 1080p)</a></p>
+<p align="center">
+  <a href="docs/promo-vertical.mp4">▶ <b>Watch the full-quality video</b> (MP4, 1080 × 1920, made for phones)</a><br>
+  <sub>Also available: <a href="docs/promo.mp4">landscape walkthrough (16:9)</a></sub>
+</p>
+
+**The four steps the video shows**
+
+1. **Add your flock** — head count × price per animal; the total is calculated for you.
+2. **Log every cost** as it happens — feed, water, medicine, transport, workers.
+3. **Read your break-even price** — the minimum price per animal, always current.
+4. **See the profit before you sell** — the whole flock, a few head, or by the kilo.
 
 ## What it does for you
 
@@ -206,6 +217,21 @@ expects:
   `.env` file that is git-ignored; only `.env.example` with placeholders is committed.
 - **No tracking, no ads, no third-party analytics.**
 
+## Licence
+
+Kati3i is **free for herders and family farms** to manage their own animals,
+and free to study and try out.
+
+**Commercial use needs permission first.** That covers selling or renting the
+app, offering it as a paid or hosted service, building it into a product that
+earns money, being paid to run it for others, use inside a company or other
+organisation, and redistributing it under another name. Permission may be free
+or paid, and it must be in writing.
+
+To ask, open an issue titled **"Commercial licence request"** in this
+repository. The full terms are in [`LICENSE`](LICENSE). This is a
+source-available licence, not an open-source one.
+
 ## Project structure
 
 ```
@@ -225,7 +251,8 @@ Kati3i/
 ├── firestore.rules          # per-user data isolation
 ├── storage.rules            # per-user file isolation
 ├── netlify.toml             # build + SPA redirects
-└── .env.example             # the settings you need to provide
+├── .env.example             # the settings you need to provide
+└── LICENSE                  # free for herders; commercial use by permission
 ```
 
 | Command | What it does |
@@ -243,6 +270,6 @@ Recharts · jsPDF + html2canvas · lucide-react · date-fns
 ---
 
 <p align="center">
-  <b>Welcome to 2027 — with easy work.</b><br>
+  <b>Welcome to the easy world of 2027.</b><br>
   From Adrar, Algeria 🇩🇿
 </p>

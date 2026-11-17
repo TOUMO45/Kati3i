@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "type": "module",
   "description": "Mobile-friendly sheep flock profit tracker. Firebase + Netlify.",
+  "license": "SEE LICENSE IN LICENSE",
   "scripts": {
     "dev": "vite",
     "demo": "vite --mode demo --port 5180",

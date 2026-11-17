@@ -1,0 +1,121 @@
+Kati3i Source-Available Licence (Non-Commercial) — Version 1.0
+
+Copyright (c) 2026 TOUMO45 (https://github.com/TOUMO45), Adrar, Algeria.
+All rights reserved, except for the permissions granted below.
+
+"Software" means Kati3i (also shown in the app as "Flock Manager"): the source
+code, documentation, screenshots, videos, name and logo in this repository.
+"Owner" means the copyright holder named above.
+
+Herders are welcome to use Kati3i. Making money from Kati3i itself, or using it
+inside a business, needs the Owner's permission first.
+
+
+1. FREE USE
+
+You may use, copy, run and modify the Software free of charge for any of the
+following:
+
+  (a) Own-flock use. An individual herder or a family farm may use the Software
+      to manage livestock that they own or raise themselves, including animals
+      raised for sale.
+
+  (b) Learning and evaluation. Studying the code, teaching, research, testing,
+      and trying the Software out to decide whether to ask for a commercial
+      licence.
+
+  (c) Contributing. Preparing fixes and improvements to offer back to this
+      repository.
+
+
+2. COMMERCIAL USE NEEDS WRITTEN PERMISSION
+
+Every use that is not listed in section 1 is "Commercial Use" and is not allowed
+unless the Owner has agreed to it in writing beforehand. Commercial Use
+includes, for example:
+
+  (a) selling, renting, leasing, licensing or sublicensing the Software or any
+      modified version of it;
+
+  (b) offering the Software, or a service built on it, to other people for a
+      fee or other payment — for example as a hosted service, a subscription,
+      or a paid app;
+
+  (c) including the Software, or a substantial part of it, in a product or
+      service that is sold or that earns money in any way, including through
+      advertising or sponsorship;
+
+  (d) being paid to install, host, operate or customise the Software for
+      someone else, or to keep records with it for clients;
+
+  (e) use by a company, cooperative, association, public body or other
+      organisation, whether for profit or not;
+
+  (f) distributing the Software, or a modified version, under another name or
+      as your own product.
+
+The Owner alone decides whether to give permission, and may give it free of
+charge, for a fee, or on other terms. Permission counts only when it is given
+in writing by the Owner.
+
+
+3. HOW TO ASK
+
+Open an issue titled "Commercial licence request" at
+https://github.com/TOUMO45/Kati3i/issues, or contact the Owner through
+https://github.com/TOUMO45. Say who you are, what you want to do with the
+Software, and where.
+
+
+4. SHARING COPIES
+
+You may share unmodified or modified copies of the Software only if all of the
+following are true:
+
+  (a) the sharing is not Commercial Use;
+  (b) you include this licence, unchanged, and keep every copyright notice;
+  (c) you say clearly what you changed, if anything;
+  (d) you keep the credit "Kati3i by TOUMO45, Adrar, Algeria" where the original
+      shows it; and
+  (e) the copies are offered under this same licence and no other.
+
+
+5. NAME AND LOGO
+
+This licence gives no right to use the name "Kati3i", the Arabic name "قطيعي",
+or the logo, except to say truthfully where the Software comes from.
+
+
+6. THIRD-PARTY COMPONENTS
+
+The Software depends on third-party packages (listed in package.json). Each of
+them remains under its own licence. This licence covers only the Owner's work.
+
+
+7. NO WARRANTY
+
+The Software is provided "as is", without warranty of any kind, express or
+implied, including warranties of merchantability, fitness for a particular
+purpose and non-infringement. The figures it calculates are an aid to your own
+judgement. They are not financial, accounting, tax or veterinary advice. Check
+important numbers yourself before you buy or sell.
+
+
+8. LIMIT OF LIABILITY
+
+To the fullest extent the law allows, the Owner is not liable for any claim,
+loss or damage of any kind arising from the Software or from its use, including
+lost profit, lost data and lost livestock.
+
+
+9. ENDING
+
+Your rights under this licence end automatically if you break any of its terms.
+When they end you must stop using the Software and delete your copies. Sections
+5, 7 and 8 continue to apply.
+
+
+10. EVERYTHING ELSE
+
+All rights not expressly granted in this licence are reserved by the Owner. If
+a court finds part of this licence unenforceable, the rest stays in force.
